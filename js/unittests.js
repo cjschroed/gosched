@@ -21,6 +21,8 @@ function UnitTestCtrl($scope,$http,$location,$routeParams) {
 		$scope.DeleteActivityTestData = {"result":"Ready."};
 		$scope.GetActivityTestData = {"result":"Ready."};
 		$scope.GetEventTestData = {"result":"Ready."};
+		$scope.EventSearch1TestData = {"result":"Ready."};
+		$scope.EventSearch2TestData = {"result":"Ready."};
 	}
 
   $scope.runtests = function() {
@@ -69,6 +71,8 @@ function UnitTestCtrl($scope,$http,$location,$routeParams) {
 				$scope.InsertBookingTest();
 				$scope.GetActivityTest();
 				$scope.GetEventTest();
+				$scope.EventSearch1Test();
+				$scope.EventSearch2Test();
 			} else {
 				$scope.InsertEventTestData = setOutcome("Failed", data, "#FF0000");
 			}
@@ -197,6 +201,42 @@ function UnitTestCtrl($scope,$http,$location,$routeParams) {
 				$scope.GetEventTestData = setOutcome("Failed", data, "#FF0000");
 		});
   };
+
+  $scope.EventSearch1Test = function() {
+    $http({
+            method : 'GET',
+            url : '/gosched/v1/activity/events/search?day=Jan 2, 2013&activity_id=' + $scope.actid,
+            headers : {
+                'Content-Type' : 'application/x-www-form-urlencoded'
+            }
+        }).success(function (data) {
+      if( data instanceof Array ) {
+        $scope.EventSearch1TestData = setOutcome("Passed", data, "#00FF00");
+      } else {
+        $scope.EventSearch1TestData = setOutcome("Failed", data, "#FF0000");
+      }
+    }).error(function (data) {
+        $scope.EventSearch1TestData = setOutcome("Failed", data, "#FF0000");
+    });
+  };
+
+	$scope.EventSearch2Test = function() {
+		$http({
+            method : 'GET',
+            url : '/gosched/v1/activity/events/search?results=days&day=Jan 2, 2013&dayend=Jan 4, 2013&activity_id=' + $scope.actid,
+            headers : {
+                'Content-Type' : 'application/x-www-form-urlencoded'
+            }
+        }).success(function (data) {
+      if( data instanceof Array ) {
+				$scope.EventSearch2TestData = setOutcome("Passed", data, "#00FF00");
+			} else {
+				$scope.EventSearch2TestData = setOutcome("Failed", data, "#FF0000");
+			}
+    }).error(function (data) {
+				$scope.EventSearch2TestData = setOutcome("Failed", data, "#FF0000");
+		});
+	};
 
 	$scope.ClearData = function() {
 		$http({
