@@ -62,35 +62,9 @@ background: #ffffff;
 <div class='navbar navbar-fixed-top'>
 	<div class='navbar-inner'>
 	<div class='container-fluid container-lemur-nav'>
-      <a href='/' class='brand'>LemurWeb&nbsp;&nbsp;</a>
+      <a href='/' class='brand'>Go Scheduling API&nbsp;&nbsp;</a>
       <ul class='nav pull-right'>
-        <li class='dropdown'>
-						<a href='#' class='dropdown-toggle' data-toggle='dropdown'>
-                <div id='usernameDropDown'>[[.Username]]</div>
-                <div class='usernameCaret'>
-                  <b class='caret'></b>
-                </div>
-              </a>
-          <ul class='dropdown-menu'>
-          	<li>
-            	<a href='#' data-link='uvHelp'>Help</a>
-            </li>
-            <li>
-              <a href='/members/welcome'>Getting Started</a>
-            </li>
-            <li class='divider'></li>
-            <li>
-            	<a href='/members/user-info'>Account Settings</a>
-            </li>
-            <li>
-            	<a href='' data-link='installWebClipper'>Install Web Clipper</a>
-            </li>
-            <li class='divider'></li>
-            <li>
-              <a href='[[.LogoutURL]]'>Logout</a>
-            </li>
-          </ul>
-        </li>
+					<li><a href='[[.LogoutURL]]' class='brand' title="Logout">[[.Username]]</a></li>
       </ul>
     </div>
   </div>
@@ -100,9 +74,16 @@ background: #ffffff;
 </div>
 
 <div class='span32'>
-  <div class='lemurTitleBar' style='margin-top:40px;'>{{message}}</div>
+  <div style='margin-top:40px;'>{{message}}</div>
 	<div class='row'>
 		<div class='span24' ng-view> </div>
+	</div>
+	<br>
+	<div class='row'>
+		<h3>README.md</h3>
+		<pre>
+			<div ng-include="readme"></div>
+		</pre>
 	</div>
 </div>
 

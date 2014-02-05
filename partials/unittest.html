@@ -1,5 +1,6 @@
 <div>
-	<button ng-click="runtests()" class="btn">Run Tests</button>
+	<br>
+	<button ng-click="runtests()" class="btn">Run Automated Tests</button>
 	<br>
 	<br>
 	<table border="1">
@@ -7,12 +8,15 @@
 	<tr> <td width="200">Insert Event</td><td><span title="{{InsertEventTestData.body}}" style="color:{{InsertEventTestData.color}};">{{InsertEventTestData.result}}</span></td> </tr>
 	<tr> <td>Get Activity List</td><td><span title="{{ActivityListTestData.body}}" style="color:{{ActivityListTestData.color}};">{{ActivityListTestData.result}}</span></td> </tr>
 	<tr> <td>Insert Booking</td><td><span title="{{InsertBookingTestData.body}}" style="color:{{InsertBookingTestData.color}};">{{InsertBookingTestData.result}}</span></td> 
-	<td><button ng-click="InsertBookingTest()" class="btn">BookEvent</button></td>
+	<td><button ng-show="addbook" ng-click="InsertBookingTest()" class="btn">Add Another Booking</button></td>
 </tr>
 	<tr> <td>Delete Event</td><td><span title="{{DeleteEventTestData.body}}" style="color:{{DeleteEventTestData.color}};">{{DeleteEventTestData.result}}</span></td> </tr>
 	<tr> <td>Delete Activity</td><td><span title="{{DeleteActivityTestData.body}}" style="color:{{DeleteActivityTestData.color}};">{{DeleteActivityTestData.result}}</span></td> </tr>
 	<tr> <td>Get Activity</td><td><span title="{{GetActivityTestData.body}}" style="color:{{GetActivityTestData.color}};">{{GetActivityTestData.result}}</span></td> </tr>
 	<tr> <td>Get Event</td><td><span title="{{GetEventTestData.body}}" style="color:{{GetEventTestData.color}};">{{GetEventTestData.result}}</span></td> </tr>
 </table>
+	<br>
+	<button ng-click="ClearData()" class="btn">Clear All Your Data</button>
+	<br>
 </div>
 

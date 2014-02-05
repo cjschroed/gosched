@@ -8,9 +8,11 @@ function setOutcome( result, body, color ) {
 
 function UnitTestCtrl($scope,$http,$location,$routeParams) {
 	$scope.username = goscheduser;
-	$scope.message = "Unit Tests Page";
+	$scope.readme = "/README.md";
+	$scope.message = "Welcome to the Go Scheduling API";
 
 	$scope.initValues = function() {
+		$scope.addbook = false;
 		$scope.ActivityListTestData = {"result":"Ready."};
 		$scope.InsertActivityTestData = {"result":"Ready."};
 		$scope.InsertEventTestData = {"result":"Ready."};
@@ -29,6 +31,7 @@ function UnitTestCtrl($scope,$http,$location,$routeParams) {
 		$scope.DeleteEventTest();
 		$scope.DeleteActivityTest();
     console.log("...tests complete.");
+		$scope.addbook = true;
 	}
 	$scope.InsertActivityTest = function() {
 		$http({
@@ -194,6 +197,20 @@ function UnitTestCtrl($scope,$http,$location,$routeParams) {
 				$scope.GetEventTestData = setOutcome("Failed", data, "#FF0000");
 		});
   };
+
+	$scope.ClearData = function() {
+		$http({
+            method : 'GET',
+            url : '/gosched/v1/activity/clear?owner=' + $scope.username,
+            headers : {
+                'Content-Type' : 'application/x-www-form-urlencoded'
+            }
+        }).success(function (data) {
+      if( data.message == "SUCCESS" ) {
+				$scope.initValues();
+			} 
+		});
+	};
 
 	$scope.initValues();
 }

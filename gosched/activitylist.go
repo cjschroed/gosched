@@ -6,6 +6,7 @@ import (
   "appengine/datastore"
 	"appengine/user"
   "encoding/json"
+	"strconv"
   "net/http"
 )
 
@@ -38,17 +39,23 @@ func ActivityListGet(w http.ResponseWriter, r *http.Request) {
 			owner = "Guest"
 		}
 	}
-	// build query to return activities by owner
-	q = datastore.NewQuery("Activity_entity").Filter("Owner = ", owner)
+	if owner == "all" {
+		q = datastore.NewQuery("Activity_entity")
+	} else {
+		// build query to return activities by owner
+		q = datastore.NewQuery("Activity_entity").Filter("Owner = ", owner)
+	}
 	t := q.Run(ds)
 	for t != nil {
-		_,err := t.Next(&act)
+		key,err := t.Next(&act)
     if err == datastore.Done {
 			break
     }
 		if err != nil {
 			break
 		}
+		ds.Infof("activity key: %v", key.IntID())
+		act.Id = strconv.FormatInt(key.IntID(),10)
 		l = append(l,act)
 	}
 	jf, err := json.Marshal(l)
