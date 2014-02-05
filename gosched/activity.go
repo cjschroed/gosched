@@ -2,7 +2,6 @@ package gosched
 
 import (
   "fmt"
-	"time"
 	"strconv"
 	"appengine"
 	"appengine/user"
@@ -16,10 +15,11 @@ type Activity_entity struct {
     Title  string `json:"title"`
     Description string `json:"description"`
     Owner string  `json:"owner"`
-    Creation_date time.Time `json:"creation_date"`
-    Last_modified time.Time `json:"last_modified"`
+		Vendor_name string `json:"vendor_name"`
 }
 
+// the event handler switches on the HTTP method to determine
+// the function to call
 func ActivityHandler(w http.ResponseWriter, r *http.Request) {
   switch {
     case r.Method == "GET":
@@ -30,40 +30,51 @@ func ActivityHandler(w http.ResponseWriter, r *http.Request) {
       ActivityDelete(w,r)
     case r.Method == "PUT":
       ActivityUpdate(w,r)
-    case r.Method == "PATCH":
-      ActivityPatch(w,r)
     default:
       fmt.Fprint(w, "Activity handler.")
   }
 }
 
-func InhaleID(r *http.Request) (int64, error) {
-	// read the id field from a form request
-	// validate that it only contains numeric characters
-	// return the ID in int64 form
-	id := r.PostFormValue("id")
-	id64,err := strconv.ParseUint(id ,10, 64)
+// InhaleID reads the id field from a form request and then
+// validates that it only conforms to a string representation of an int64
+// returns the ID in int64 form
+func InhaleID(r *http.Request, l bool) (int64, error) {
+	var id string
+	if l {
+		id = r.PostFormValue("id")
+	} else {
+		id = r.FormValue("id")
+	}
+	id64,err := strconv.ParseInt(id ,10, 0)
 	return id64,err
 }
 
+// This is the function responsible for converting the http parameter data
+// into an activity structure. Limits on the data are enforced
+// to prevent malicious intent by API users
 func InhaleActivity(r *http.Request) Activity_entity {
 	var a Activity_entity
-	ds := appengine.NewContext(r)
-	a.Id = r.PostFormValue("id")
-	a.Description = r.PostFormValue("description")
-	a.Title = r.PostFormValue("title")
-	ds.Infof("title:%v", r.PostFormValue("title"))
+	a.Description = r.FormValue("description")
+	a.Title = r.FormValue("title")
+	a.Vendor_name = r.FormValue("vendor_name")
 	return a
 }
 
+// ActivityGet: retreive an activity by it's ID
+// Form parameters expected:
+//   id: string representing the datastore ID of the activity to be retreived 
 func ActivityGet(w http.ResponseWriter, r *http.Request) {
 	var act Activity_entity
   ds := appengine.NewContext(r)
-  id64,_ := InhaleID(r)
-  key := datastore.NewKey(ds, "Activity_entity", "", id64, nil)
-  err := datastore.Get(ds, key, &act)
+  id64,err := InhaleID(r,false)
   if err != nil {
-    fmt.Fprint(w, "{\"errror\":\"Activity %v not found\"}", id64)
+    fmt.Fprint(w, "{\"errror\":\"ID could not be parsed\"}")
+    return
+  }
+  key := datastore.NewKey(ds, "Activity_entity", "", id64, nil)
+  err = datastore.Get(ds, key, &act)
+  if err != nil {
+    fmt.Fprintf(w, "{\"errror\":\"Activity %v not found, %v\"}", id64, err)
     return
   }
 	act.Id = strconv.FormatInt(id64,10)
@@ -75,6 +86,11 @@ func ActivityGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ActivityInsert: create a new activity with data supplied by the client
+// Form parameters expected:
+//	title: string title field 
+//  description: string description field 
+//  vendor_name: string describing the vendor supplying the activity 
 func ActivityInsert(w http.ResponseWriter, r *http.Request) {
 	ds := appengine.NewContext(r)
 	r.ParseForm()
@@ -100,9 +116,12 @@ func ActivityInsert(w http.ResponseWriter, r *http.Request) {
   }
 }
 
+// ActivityDelete: delete an activity object by it's ID
+// Form parameters expected:
+//   id: string representing the datastore ID of the activity to be removed
 func ActivityDelete(w http.ResponseWriter, r *http.Request) {
   ds := appengine.NewContext(r)
-  id64,err := strconv.ParseInt(r.FormValue("id"), 10, 0)
+  id64,err := InhaleID(r,false)
   if err != nil {
     fmt.Fprint(w, "{\"errror\":\"ID could not be read\"}")
     return
@@ -113,27 +132,32 @@ func ActivityDelete(w http.ResponseWriter, r *http.Request) {
     fmt.Fprint(w, "{\"errror\":\"Activity %v not found\"}", id64)
     return
   }
-	fmt.Fprint(w, "{\"method\":\"DELETE\",\"id\":\"%v\",\"message\":\"SUCCESS\"}",id64)
+	fmt.Fprintf(w, "{\"method\":\"DELETE\",\"id\":\"%v\",\"message\":\"SUCCESS\"}",id64)
 }
 
+// ActivityUpdate takes the same parameters as insert, but replaces the
+//  exisiting object instead of creating a new one
 func ActivityUpdate(w http.ResponseWriter, r *http.Request) {
-	var act Activity_entity
-	act.Title = "Update test activity"
-	jf, err := json.Marshal(act)
-	if err != nil {
-		fmt.Fprint(w, "{\"errror\":\"Error marshalling json\"}")
-	} else {
-		w.Write(jf)
-	}
+  ds := appengine.NewContext(r)
+	var old Activity_entity
+  act := InhaleActivity(r)
+  id64,err := InhaleID(r,true)
+  key := datastore.NewKey(ds, "Activity_entity", "", id64, nil)
+  err = datastore.Get(ds, key, &old)
+  if err != nil {
+    fmt.Fprint(w, "{\"errror\":\"Activity not found\"}")
+    return
+  }
+  _,err = datastore.Put(ds, key, &act)
+  if err != nil {
+    fmt.Fprint(w, "{\"errror\":\"Error updating activity\"}")
+    return
+  }
+  jf, err := json.Marshal(act)
+  if err != nil {
+    fmt.Fprint(w, "{\"errror\":\"Error marshalling json\"}")
+  } else {
+    w.Write(jf)
+  }
 }
 
-func ActivityPatch(w http.ResponseWriter, r *http.Request) {
-	var act Activity_entity
-	act.Title = "Patch test activity"
-	jf, err := json.Marshal(act)
-	if err != nil {
-		fmt.Fprint(w, "{\"errror\":\"Error marshalling json\"}")
-	} else {
-		w.Write(jf)
-	}
-}

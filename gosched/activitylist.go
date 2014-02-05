@@ -19,6 +19,8 @@ func ActivityListHandler(w http.ResponseWriter, r *http.Request) {
   }
 }
 
+// returns all activities correpsonding to the logged in user
+//  or one specified by the 'owner' form parameter
 func ActivityListGet(w http.ResponseWriter, r *http.Request) {
 	var q *datastore.Query
 	var act Activity_entity
@@ -36,7 +38,7 @@ func ActivityListGet(w http.ResponseWriter, r *http.Request) {
 			owner = "Guest"
 		}
 	}
-	// build query to return activities by an owner
+	// build query to return activities by owner
 	q = datastore.NewQuery("Activity_entity").Filter("Owner = ", owner)
 	t := q.Run(ds)
 	for t != nil {
@@ -55,5 +57,25 @@ func ActivityListGet(w http.ResponseWriter, r *http.Request) {
   } else {
     w.Write(jf)
   }
-
 }
+
+// Clear all data owned by a user
+// dangerous, use with care (would be protected by admin priveleges in
+// a production system)
+func ClearUserData(w http.ResponseWriter, r *http.Request) {
+	var q *datastore.Query
+	ds := appengine.NewContext(r)
+	owner := r.FormValue("owner")
+	q = datastore.NewQuery("Activity_entity").Filter("Owner = ", owner).KeysOnly()
+	keylist,_ := q.GetAll(ds,nil)
+	datastore.DeleteMulti(ds, keylist)
+	q = datastore.NewQuery("Event_entity").Filter("Owner = ", owner).KeysOnly()
+	keylist,_ = q.GetAll(ds,nil)
+	datastore.DeleteMulti(ds, keylist)
+	q = datastore.NewQuery("Booking_entity").Filter("Owner = ", owner).KeysOnly()
+	keylist,_ = q.GetAll(ds,nil)
+	datastore.DeleteMulti(ds, keylist)
+	fmt.Fprint(w, "{\"method\":\"DELETE\",\"message\":\"SUCCESS\"}")
+}
+
+
