@@ -111,35 +111,25 @@ To search for activity availability during a day:
 		start times that fall on day with availability  
 
 To create a booking against an activity event:  
-	url: /gosched/v1/activity/book  
-	method: POST  
-	parameters:  
-		event_id: integer in string form for the event to book  
-		count: integer in string form for number of attendees in the booking,  
-			presumed to be 1 if absent  
-	returns:  
-		JSON of the booking object, including the ID 	  
+- url: /gosched/v1/activity/book  
+- method: POST  
+- parameters:  
+    - event_id: integer in string form for the event to book  
+    - count: integer in string form for number of attendees in the booking,  presumed to be 1 if absent  
+- returns:  JSON of the booking object, including the ID 	  
 
 To view a list of activities:  
-	url: /gosched/v1/activity/list  
-	method: GET  
-	parameters:  
-		owner: a string reprenting the owner of the activies you wish to   
-			view, or "all" to see all activities (limit 100). Cursors to walk   
-			the entire list are not implemented yet. The list of all   
-			activities across all vendors is for demonstration purposes only.   
-			The vendor's email address used to create the activities is the key  
-			to find all activities supplied by that vendor. In a production env  
-			there would be a vendor registration system that would provide a more  
-			appropriate key than the email address.  
+- url: /gosched/v1/activity/list  
+- method: GET  
+- parameters:  
+    - owner: a string reprenting the owner of the activies you wish to   view, or "all" to see all activities (limit 100). Cursors to walk   the entire list are not implemented yet. The list of all   activities across all vendors is for demonstration purposes only.   The vendor's email address used to create the activities is the key  to find all activities supplied by that vendor. In a production env  there would be a vendor registration system that would provide a more appropriate key than the email address.  
 
 To delete all data associated with a user:  
-	* url: /gosched/v1/activity/clear  
-	* method: GET  
-	* parameters:  
-		* owner: ownername in string format  
-	* returns:  
-		* JSON object with message = "SUCCESS" or error object  
+- url: /gosched/v1/activity/clear  
+- method: GET  
+- parameters:  
+    - owner: ownername in string format  
+- returns:  JSON object with message = "SUCCESS" or error object  
 
 Improvements  
 
