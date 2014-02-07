@@ -8,6 +8,7 @@ import (
   "appengine/datastore"
 	"encoding/json"
   "net/http"
+	"errors"
 )
 
 // a booking is an object describing a party booking reservations for an event
@@ -86,32 +87,36 @@ func BookingInsert(w http.ResponseWriter, r *http.Request) {
 	// before putting, get the event
 	// verify that it exists
   ekey := datastore.NewKey(ds, "Event_entity", "", book.Event_id, nil)
-  err := datastore.Get(ds, ekey, &e)
+	err := datastore.RunInTransaction(ds, func(ds appengine.Context) error {
+		err := datastore.Get(ds, ekey, &e)
+    if err != nil {
+      return err
+    }
+	  // ensure the event is available and has room for the party
+	  if !e.Available && e.Bookings_count + book.Count <= e.Max_attendees {
+			err = errors.New("No availability")
+      return err
+    }
+	  // update event with booking count incremented
+	  e.Bookings_count = e.Bookings_count + book.Count
+	  // change status if closed
+	  if e.Bookings_count >= e.Max_attendees {
+		  e.Available = false
+	  }
+    bkey,err = datastore.Put(ds, bkey, &book)
+    if err != nil {
+      return err
+    }
+    ekey,err = datastore.Put(ds, ekey, &e)
+    if err != nil {
+      return err
+    }
+		return err
+	}, nil)
   if err != nil {
-    fmt.Fprintf(w, "{\"errror\":\"Event %v not found, %v\"}", book.Event_id, err)
-    return
-  }
-	// ensure the event is available and has room for the party
-	if !e.Available && e.Bookings_count + book.Count <= e.Max_attendees {
-    fmt.Fprintf(w, "{\"errror\":\"Event %v not available\"}", book.Event_id)
-    return
-  }
-	// update event with booking count incremented
-	e.Bookings_count = e.Bookings_count + book.Count 
-	// change status if closed
-	if e.Bookings_count >= e.Max_attendees {
-		e.Available = false
+		fmt.Fprintf(w, "{\"errror\":\"Unable to book %v\"}", book.Event_id)
+		return
 	}
-  bkey,err = datastore.Put(ds, bkey, &book)
-  if err != nil {
-    fmt.Fprint(w, "{\"errror\":\"Booking insert failed\"}")
-    return
-  }
-  ekey,err = datastore.Put(ds, ekey, &e)
-  if err != nil {
-    fmt.Fprint(w, "{\"errror\":\"Event update failed\"}")
-    return
-  }
   book.Id = strconv.FormatInt(bkey.IntID(),10)
   jf, err := json.Marshal(book)
   if err != nil {
