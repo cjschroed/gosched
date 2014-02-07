@@ -15,7 +15,6 @@ import (
 type Booking_entity struct {
     Id string `json:"id" datastore:"-"`
     Event_id  int64 `json:"event_id"`
-    Instance int `json:"instance"`
 		Count int `json:"count"`
     Owner string  `json:"owner"`
 }
@@ -23,12 +22,19 @@ type Booking_entity struct {
 // the event handler switches on the HTTP method to determine
 // the function to call
 func BookingHandler(w http.ResponseWriter, r *http.Request) {
+  ds := appengine.NewContext(r)
+  u := user.Current(ds)
+	if u == nil {
+    fmt.Fprint(w, "{\"errror\":\"User credentials could not be determined.\"}")
+		return
+	}
   switch {
     case r.Method == "GET":
-      BookingGet(w,r)
+      BookingGet(w,r,ds,u)
     case r.Method == "POST":
-      BookingInsert(w,r)
+      BookingInsert(w,r,ds,u)
 	}
+	return
 }
 
 func InhaleBooking(r *http.Request) Booking_entity {
@@ -45,9 +51,8 @@ func InhaleBooking(r *http.Request) Booking_entity {
 // BookingGet: retreive a booking object by it's ID
 // Form parameters expected:
 //   id: string representing the datastore ID of the booking to be retreived 
-func BookingGet(w http.ResponseWriter, r *http.Request) {
+func BookingGet(w http.ResponseWriter, r *http.Request, ds appengine.Context, u *user.User) {
   var book Booking_entity
-  ds := appengine.NewContext(r)
   id64,err := InhaleID(r,false)
   if err != nil {
     fmt.Fprint(w, "{\"errror\":\"ID could not be parsed\"}")
@@ -73,17 +78,12 @@ func BookingGet(w http.ResponseWriter, r *http.Request) {
 //  event_id: integer in string form denoting the datastore ID of the
 //		event this booking is for
 //  count: integer denoting the number of attendees for this booking
-func BookingInsert(w http.ResponseWriter, r *http.Request) {
+func BookingInsert(w http.ResponseWriter, r *http.Request, ds appengine.Context, u *user.User) {
 	var e Event_entity
-  ds := appengine.NewContext(r)
   bkey := datastore.NewIncompleteKey(ds, "Booking_entity", nil)
   book := InhaleBooking(r)
-  u := user.Current(ds)
-  if u != nil {
-    book.Owner = u.Email
-  } else {
-    book.Owner = "Guest"
-  }
+  book.Owner = u.Email
+
 	// before putting, get the event
 	// verify that it exists
   ekey := datastore.NewKey(ds, "Event_entity", "", book.Event_id, nil)

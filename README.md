@@ -120,6 +120,10 @@ To delete all data associated with a user:
 
 Improvements  
 
+- Memcache gets and queries
+
+- Quick Code refactor to clean up messes
+
 - Recurring events:
     - These can be implemented by applying a crontab code to each event. 0 for no repeat, 1-7 for repeating on a specific day of the week, 8-39 to repeat on a specific day of the month, and so forth. Then a composite query is built to retrieve events that don't repeat, plus events that repeat on the day of the week in question, plus events that repeat on the day of the month in question and so forth. A particular instance of a repeating event can be referenced by an iterator integer that is the event count from the original event. Bookings instantiate a non-repeating version of the event on the day referred to by the iterator value.This new event would be the anchor for subsequent bookings to that instance of the activity.
 
