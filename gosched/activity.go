@@ -21,15 +21,21 @@ type Activity_entity struct {
 // the event handler switches on the HTTP method to determine
 // the function to call
 func ActivityHandler(w http.ResponseWriter, r *http.Request) {
+  ds := appengine.NewContext(r)
+  u := user.Current(ds)
+	if u == nil {
+    fmt.Fprint(w, "{\"errror\":\"User credentials could not be determined.\"}")
+		return
+	}
   switch {
     case r.Method == "GET":
-      ActivityGet(w,r)
+      ActivityGet(w,r,ds,u)
     case r.Method == "POST":
-      ActivityInsert(w,r)
+      ActivityInsert(w,r,ds,u)
     case r.Method == "DELETE":
-      ActivityDelete(w,r)
+      ActivityDelete(w,r,ds,u)
     case r.Method == "PUT":
-      ActivityUpdate(w,r)
+      ActivityUpdate(w,r,ds,u)
     default:
       fmt.Fprint(w, "Activity handler.")
   }
@@ -63,9 +69,8 @@ func InhaleActivity(r *http.Request) Activity_entity {
 // ActivityGet: retreive an activity by it's ID
 // Form parameters expected:
 //   id: string representing the datastore ID of the activity to be retreived 
-func ActivityGet(w http.ResponseWriter, r *http.Request) {
+func ActivityGet(w http.ResponseWriter, r *http.Request,ds appengine.Context, u *user.User) {
 	var act Activity_entity
-  ds := appengine.NewContext(r)
   id64,err := InhaleID(r,false)
   if err != nil {
     fmt.Fprint(w, "{\"errror\":\"ID could not be parsed\"}")
@@ -91,17 +96,10 @@ func ActivityGet(w http.ResponseWriter, r *http.Request) {
 //	title: string title field 
 //  description: string description field 
 //  vendor_name: string describing the vendor supplying the activity 
-func ActivityInsert(w http.ResponseWriter, r *http.Request) {
-	ds := appengine.NewContext(r)
-	r.ParseForm()
+func ActivityInsert(w http.ResponseWriter, r *http.Request, ds appengine.Context, u *user.User) {
   key := datastore.NewIncompleteKey(ds, "Activity_entity", nil)
 	act := InhaleActivity(r)
-	u := user.Current(ds)
-	if u != nil {
-		act.Owner = u.Email
-	} else {
-		act.Owner = "Guest"
-	}
+	act.Owner = u.Email
   mykey,err := datastore.Put(ds, key, &act)
   if err != nil {
     fmt.Fprint(w, "{\"errror\":\"Activity not found\"}")
@@ -119,8 +117,7 @@ func ActivityInsert(w http.ResponseWriter, r *http.Request) {
 // ActivityDelete: delete an activity object by it's ID
 // Form parameters expected:
 //   id: string representing the datastore ID of the activity to be removed
-func ActivityDelete(w http.ResponseWriter, r *http.Request) {
-  ds := appengine.NewContext(r)
+func ActivityDelete(w http.ResponseWriter, r *http.Request, ds appengine.Context, u *user.User) {
   id64,err := InhaleID(r,false)
   if err != nil {
     fmt.Fprint(w, "{\"errror\":\"ID could not be read\"}")
@@ -137,8 +134,7 @@ func ActivityDelete(w http.ResponseWriter, r *http.Request) {
 
 // ActivityUpdate takes the same parameters as insert, but replaces the
 //  exisiting object instead of creating a new one
-func ActivityUpdate(w http.ResponseWriter, r *http.Request) {
-  ds := appengine.NewContext(r)
+func ActivityUpdate(w http.ResponseWriter, r *http.Request, ds appengine.Context, u *user.User) {
 	var old Activity_entity
   act := InhaleActivity(r)
   id64,err := InhaleID(r,true)
