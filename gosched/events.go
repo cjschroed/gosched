@@ -30,15 +30,21 @@ type Event_entity struct {
 // the event handler switches on the HTTP method to determine
 // the function to call
 func EventsHandler(w http.ResponseWriter, r *http.Request) {
+  ds := appengine.NewContext(r)
+  u := user.Current(ds)
+  if u == nil {
+    fmt.Fprint(w, "{\"errror\":\"User credentials could not be determined.\"}")
+    return
+  }
   switch {
     case r.Method == "GET":
-      EventGet(w,r)
+      EventGet(w,r,ds,u)
     case r.Method == "POST":
-      EventInsert(w,r)
+      EventInsert(w,r,ds,u)
     case r.Method == "DELETE":
-      EventDelete(w,r)
+      EventDelete(w,r,ds,u)
     case r.Method == "PUT":
-      EventUpdate(w,r)
+      EventUpdate(w,r,ds,u)
     default:
       fmt.Fprint(w, "Event handler.")
   }
@@ -47,9 +53,8 @@ func EventsHandler(w http.ResponseWriter, r *http.Request) {
 // EventGet: retreive an event by it's ID
 // Form parameters expected:
 //   id: string representing the datastore ID of the event to be retreived 
-func EventGet(w http.ResponseWriter, r *http.Request) {
+func EventGet(w http.ResponseWriter, r *http.Request, ds appengine.Context, u *user.User) {
   var event Event_entity
-	ds := appengine.NewContext(r)
   id64,_ := strconv.ParseInt(r.FormValue("id"), 10, 0)
   key := datastore.NewKey(ds, "Event_entity", "", id64, nil)
   g_err := datastore.Get(ds, key, &event)
@@ -91,15 +96,9 @@ func InhaleEvent(r *http.Request) Event_entity {
 //  end_time: string representation for the ending time for the event, 
 //  max_attendees: integer in string form denoting the maximum number of 
 //		people allowed to attend the event 
-func EventInsert(w http.ResponseWriter, r *http.Request) {
-	ds := appengine.NewContext(r)
+func EventInsert(w http.ResponseWriter, r *http.Request, ds appengine.Context, u *user.User) {
   event := InhaleEvent(r)
-  u := user.Current(ds)
-  if u != nil {
-    event.Owner = u.Email
-  } else {
-    event.Owner = "Guest"
-  }
+  event.Owner = u.Email
 	if event.Max_attendees > event.Bookings_count {
 		event.Available = true
 	} else {
@@ -123,8 +122,7 @@ func EventInsert(w http.ResponseWriter, r *http.Request) {
 // EventDelete: remove an event by ID
 // Form parameters expected:
 //   id: string representing the datastore ID of the event to be deleted
-func EventDelete(w http.ResponseWriter, r *http.Request) {
-	ds := appengine.NewContext(r)
+func EventDelete(w http.ResponseWriter, r *http.Request, ds appengine.Context, u *user.User) {
 	id64,err := strconv.ParseInt(r.FormValue("id"), 10, 0)
   if err != nil {
     fmt.Fprint(w, "{\"errror\":\"ID could not be read\"}")
@@ -140,8 +138,7 @@ func EventDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 
-func EventUpdate(w http.ResponseWriter, r *http.Request) {
-	ds := appengine.NewContext(r)
+func EventUpdate(w http.ResponseWriter, r *http.Request, ds appengine.Context, u *user.User) {
 	var e Event_entity
   event := InhaleEvent(r)
 	id64,err := strconv.ParseInt(event.Id, 10, 0)
